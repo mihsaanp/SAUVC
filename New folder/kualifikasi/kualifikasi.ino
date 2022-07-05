@@ -1,11 +1,10 @@
 #include <Servo.h>
-Servo ESC;
-Servo ESC2;
-//#include <SoftwareSerial.h>
-
-//static const int RXPin = 2, TXPin = 3;
-//SoftwareSerial Seriall(RXPin, TXPin);
-
+Servo FR;
+Servo FL;
+Servo BR;
+Servo BL;
+Servo CR;
+Servo CL;
 //#define SET_POIN 0.00
 #define MIN 1220
 #define MAX 1500
@@ -18,8 +17,7 @@ String dataIMU[10];
 int i;
 boolean parsing = false;
 float hadap, hadap1;
-//unsigned long waktuSekarang,waktuAkhir,waktuSelisih;
-float sum_error,erorAwal, koreksiP, koreksiI,erorAkhir, koreksiD, koreksiTotal,Kiri ,Kanan, P, I, D, SET_POINT;
+float sum_error,erorAwal, koreksiP, koreksiI,erorAkhir, koreksiD, koreksiTotal,FKiri , FKanan, BKiri, BKanan, Kiri, Kanan, P, I, D, SET_POINT;
 
 void setup(){
   Serial.begin(115200);
@@ -43,17 +41,27 @@ void setup(){
   Serial2.write(0x53);
 
   delay(1000); 
-  ESC.attach(9,1000,2000);
-  ESC2.attach(10,1000,2000);
-  ESC.writeMicroseconds(1475);
-  ESC2.writeMicroseconds(1470);
+  FR.attach(8,1000,2000);
+  FL.attach(9,1000,2000);
+  BR.attach(10,1000,2000);
+  BL.attach(11,1000,2000);
+  CR.attach(12,1000,2000);
+  CL.attach(13,1000,2000);
+  FR.writeMicroseconds(1500);
+  FL.writeMicroseconds(1500);
+  BR.writeMicroseconds(1500);
+  BL.writeMicroseconds(1500);
+  CR.writeMicroseconds(1500);
+  CL.writeMicroseconds(1500);
   delay(1000);
-  P = 2;
+  P = 1.5;
   I = 0.00;
-  D = 603.98901;
+  D = 10;
   SET_POINT = 0.00;
-  Kiri = 1600;
-  Kanan = 1600;
+  FKiri = 1550;
+  FKanan = 1550;
+  FKiri = 1450;
+  FKanan = 1450;
 }
 
 void loop(){
@@ -69,11 +77,11 @@ void loop(){
     parsingData();
     parsing = false;
     dataInIMU = "";
-    maju();
-    Serial.print(koreksiTotal);
-    Serial.print("|");
-    Serial.println(hadap);
- //   delay(10000);
+    pivot();
+ //  Serial.print(koreksiTotal);
+ //  Serial.print("|");
+ //  Serial.println(hadap);
+ //  delay(10000);
     
     }
  // Serial.print("P: ");
@@ -117,6 +125,7 @@ void loop(){
   }
   
 }
+
 
 void parsingData(){
   int j = 0;
@@ -173,56 +182,85 @@ float hitung_PID(float x)
 void maju(){
 
   hitung_PID(hadap);
-  if (koreksiTotal>10){
-    Kiri = Kiri + koreksiTotal;
-    Kanan = Kanan - koreksiTotal;
-    batascw();
-    ESC.writeMicroseconds(Kiri);
-    ESC2.writeMicroseconds(Kanan);  
-    delay(10);     
+  hadap1 = abs(hadap);
+  if (hadap1 > 0.3){
+  FKiri = FKiri - koreksiTotal;
+  FKanan = FKanan + koreksiTotal;
+  BKiri = BKiri + koreksiTotal;
+  BKanan = BKanan - koreksiTotal;
+  if(FKiri <= 1500) {FKiri = 1500;}
+  if(FKiri >= 1600) {FKiri = 1600;}
+  if(FKanan <= 1500) {FKanan = 1500;}
+  if(FKanan >= 1600) {FKanan = 1600;}
+  if(BKiri >= 1500) {BKiri = 1500;}
+  if(BKiri <= 1400) {BKiri = 1400;}
+  if(BKanan >= 1500) {BKanan = 1500;}
+  if(BKanan <= 1400) {BKanan = 1400;}
+  } 
+  else {
+    FKiri = 1550;
+    FKanan = 1550;
+    BKiri = 1450;
+    BKanan = 1450;
   }
-  if (koreksiTotal<10){
-    Kiri = Kiri + koreksiTotal;
-    Kanan = Kanan - koreksiTotal;
-    batascw();
-    ESC.writeMicroseconds(Kiri);
-    ESC2.writeMicroseconds(Kanan);    
-    delay(10);
+  //Serial.print(hadap);
+ // Serial.print(" | ");
+//Serial.print(BKiri);
+  //Serial.print(" | ");
+  //Serial.println(BKanan);
+  //delay(100);
+  FR.writeMicroseconds(FKanan);
+  FL.writeMicroseconds(FKiri);
+  BR.writeMicroseconds(BKanan);
+  BL.writeMicroseconds(BKiri);
+  CR.writeMicroseconds(1500);
+  CL.writeMicroseconds(1500);  
+  delay(10000);     
   }
-  else{
-    Kiri = 1600;
-    Kanan = 1600;
+
+void pivot(){
+
+  hitung_PID(hadap);
+  hadap1 = abs(hadap);
+  if (hadap1 > 5.0){
+  FKiri = FKiri + koreksiTotal;
+  FKanan = FKanan - koreksiTotal;
+  BKiri = BKiri + koreksiTotal;
+  BKanan = BKanan - koreksiTotal;
+  if(FKiri <= 1400) {FKiri = 1400;}
+  if(FKiri >= 1600) {FKiri = 1600;}
+  if(FKanan <= 1400) {FKanan = 1400;}
+  if(FKanan >= 1600) {FKanan = 1600;}
+  if(BKiri >= 1500) {BKiri = 1500;}
+  if(BKiri <= 1400) {BKiri = 1400;}
+  if(BKanan >= 1500) {BKanan = 1500;}
+  if(BKanan <= 1400) {BKanan = 1400;}
+  } 
+  else {
+    FKiri = 1500;
+    FKanan = 1500;
+    BKiri = 1500;
+    BKanan = 1500;
   }
-}
+  Serial.print(hadap);
+  Serial.print(" | ");
+  Serial.print(FKiri);
+  Serial.print(" | ");
+  Serial.println(FKanan);
+  delay(100);
+  //FR.writeMicroseconds(FKanan);
+  //FL.writeMicroseconds(FKiri);
+  //BR.writeMicroseconds(BKanan);
+  //BL.writeMicroseconds(BKiri);
+  //CR.writeMicroseconds(1500);
+  //CL.writeMicroseconds(1500);  
+  //delay(10000);     
+  }
 
 void kanan(){
   Kiri = 1600;
   Kanan = 1600;
   SET_POINT = 90;
   hitung_PID(hadap);
-  if (koreksiTotal>90){
-    Kiri = Kiri - koreksiTotal;
-    Kanan = Kanan - koreksiTotal;
-    ESC.writeMicroseconds(Kiri);
-    ESC2.writeMicroseconds(Kanan);  
-    delay(2000);  
-  }
-  if (koreksiTotal<0){
-    Kiri = Kiri + koreksiTotal;
-    Kanan = Kanan + koreksiTotal;
-    batascw();
-    batasccw();
-    ESC.writeMicroseconds(Kiri);
-    ESC2.writeMicroseconds(Kanan);   
-    delay(2000); 
-  }
-}
 
-void batascw(){
-  if(Kiri <= 1500) {Kiri = 1500;}
-  if(Kiri >= 1700) {Kiri = 1700;}
-}
-void batasccw(){
-  if(Kanan <= 1300) {Kanan = 1300;}
-  if(Kanan >= 1500) {Kanan = 1500;}
-}
+  }
